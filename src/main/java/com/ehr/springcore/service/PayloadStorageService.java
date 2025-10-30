@@ -29,12 +29,10 @@ public class PayloadStorageService {
         String logEntry = String.format("[%s] %s", type, payload.toString());
         logger.info("Storing payload: {}", logEntry);
 
-        synchronized (payloads) {
-            if (payloads.size() >= loggingProperties.getMaxSize()) {
-                payloads.remove(0);
-            }
-            payloads.add(logEntry);
+        if (payloads.size() >= loggingProperties.getMaxSize()) {
+            payloads.remove(0);
         }
+        payloads.add(logEntry);
     }
 
     public List<String> getPayloads() {
