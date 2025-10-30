@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: ehr-spring-core
+
+server:
+  port: 8080
+
+# Security configuration
+security:
+  api-key: ${API_KEY:default-api-key-change-in-production}
+
+# In-memory payload logging configuration
+logging:
+  payloads:
+    enabled: true
+    max-size: 1000
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+# Swagger/OpenAPI configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
