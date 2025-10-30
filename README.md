@@ -1,2 +1,190 @@
-# ehr-spring-core
-Core Spring Boot application for the EHR (Engineering &amp; Innovation Hub) platform. This service provides the foundational architecture, configuration, and shared components used across all EHR microservices — including security, data access, and application utilities.
+# EHR Spring Core
+
+Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform. This service provides analytics ingestion endpoints for events and metrics with built-in validation, authentication, and monitoring.
+
+## Features
+
+- **Analytics Ingestion**: REST endpoints for ingesting events and metrics
+- **API Security**: X-API-Key authentication for all API endpoints
+- **Validation**: Request validation using Jakarta Bean Validation
+- **Health Monitoring**: Spring Boot Actuator health checks
+- **API Documentation**: Interactive Swagger UI for API exploration
+- **In-Memory Logging**: Configurable payload storage for debugging
+
+## Quick Start
+
+### Prerequisites
+
+- Java 17 or higher
+- Maven 3.6+
+
+### Building the Application
+
+```bash
+mvn clean package
+```
+
+### Running the Application
+
+```bash
+java -jar target/ehr-spring-core-1.0.0.jar
+```
+
+Or using Maven:
+
+```bash
+mvn spring-boot:run
+```
+
+The application will start on `http://localhost:8080`
+
+### Configuration
+
+Configure the application via environment variables or `src/main/resources/application.yml`:
+
+```yaml
+# API Key (set via environment variable for production)
+security:
+  api-key: ${API_KEY:default-api-key-change-in-production}
+
+# Payload logging configuration
+logging:
+  payloads:
+    enabled: true
+    max-size: 1000
+```
+
+**Important**: Always set the `API_KEY` environment variable in production:
+
+```bash
+export API_KEY=your-secure-api-key
+java -jar target/ehr-spring-core-1.0.0.jar
+```
+
+## API Endpoints
+
+### Ingest Event
+
+```bash
+POST /api/v1/ingest/events
+Content-Type: application/json
+X-API-Key: your-api-key
+
+{
+  "eventName": "user.login",
+  "timestamp": "2025-10-30T19:52:00Z",
+  "properties": {
+    "userId": "123",
+    "action": "login"
+  }
+}
+```
+
+### Ingest Metric
+
+```bash
+POST /api/v1/ingest/metrics
+Content-Type: application/json
+X-API-Key: your-api-key
+
+{
+  "metricName": "cpu.usage",
+  "value": 75.5,
+  "timestamp": "2025-10-30T19:52:00Z",
+  "unit": "percent"
+}
+```
+
+### Health Check
+
+```bash
+GET /actuator/health
+```
+
+## API Documentation
+
+Access the interactive Swagger UI at:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+OpenAPI specification available at:
+
+```
+http://localhost:8080/api-docs
+```
+
+## Example Usage
+
+### Using cURL
+
+```bash
+# Set your API key
+API_KEY="default-api-key-change-in-production"
+
+# Ingest an event
+curl -X POST http://localhost:8080/api/v1/ingest/events \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY" \
+  -d '{
+    "eventName": "user.login",
+    "timestamp": "2025-10-30T19:52:00Z",
+    "properties": {
+      "userId": "123",
+      "action": "login"
+    }
+  }'
+
+# Ingest a metric
+curl -X POST http://localhost:8080/api/v1/ingest/metrics \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY" \
+  -d '{
+    "metricName": "cpu.usage",
+    "value": 75.5,
+    "timestamp": "2025-10-30T19:52:00Z",
+    "unit": "percent"
+  }'
+
+# Check health
+curl http://localhost:8080/actuator/health
+```
+
+## Testing
+
+Run the test suite:
+
+```bash
+mvn test
+```
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── main/
+│   ├── java/com/ehr/springcore/
+│   │   ├── config/          # Configuration classes
+│   │   ├── controller/      # REST controllers
+│   │   ├── exception/       # Exception handlers
+│   │   ├── model/           # DTOs and models
+│   │   ├── security/        # Security filters
+│   │   └── service/         # Business logic
+│   └── resources/
+│       └── application.yml  # Application configuration
+└── test/                    # Test classes
+```
+
+## Security
+
+- All `/api/*` endpoints require X-API-Key authentication
+- Actuator and Swagger endpoints are public
+- Default API key should never be used in production
+- Application logs a warning when using the default API key
+
+## License
+
+This is part of the EHR (Engineering & Innovation Hub) platform.
