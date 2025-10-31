@@ -1,0 +1,239 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EHR Spring Core - Aurora PostgreSQL Serverless v2 Database'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where Aurora will be deployed
+  
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of subnet IDs for Aurora (at least 2 in different AZs)
+  
+  DatabaseName:
+    Type: String
+    Default: ehrdb
+    Description: Database name
+  
+  MasterUsername:
+    Type: String
+    Default: postgres
+    Description: Master username for Aurora
+  
+  MinCapacity:
+    Type: Number
+    Default: 0.5
+    Description: Minimum Aurora Capacity Units (ACUs)
+    AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+  
+  MaxCapacity:
+    Type: Number
+    Default: 2
+    Description: Maximum Aurora Capacity Units (ACUs)
+    AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 16, 32, 64]
+  
+  AllowedCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block allowed to connect to Aurora
+
+Resources:
+  # Secrets Manager - Database Password
+  DatabasePassword:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ehr-db-password
+      Description: Aurora PostgreSQL master password
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${MasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+        RequireEachIncludedType: true
+
+  # DB Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: ehr-aurora-subnet-group
+      DBSubnetGroupDescription: Subnet group for EHR Aurora cluster
+      SubnetIds: !Ref SubnetIds
+
+  # Security Group for Aurora
+  AuroraSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Aurora PostgreSQL
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref AllowedCIDR
+          Description: PostgreSQL access from VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: ehr-aurora-sg
+
+  # Aurora Cluster Parameter Group
+  DBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: Custom parameter group for EHR Aurora PostgreSQL
+      Family: aurora-postgresql15
+      Parameters:
+        shared_preload_libraries: pg_stat_statements
+        log_statement: mod
+        log_min_duration_statement: 1000
+
+  # Aurora Cluster
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: '15.4'
+      EngineMode: provisioned
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabasePassword}:SecretString:password}}'
+      DBClusterIdentifier: ehr-aurora-cluster
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref AuroraSecurityGroup
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      EnableIAMDatabaseAuthentication: true
+      StorageEncrypted: true
+      EnableCloudwatchLogsExports:
+        - postgresql
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+      Tags:
+        - Key: Name
+          Value: ehr-aurora-cluster
+        - Key: Environment
+          Value: production
+
+  # Aurora Instance
+  AuroraInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: ehr-aurora-instance
+      DBClusterIdentifier: !Ref AuroraCluster
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
+      PubliclyAccessible: false
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 7
+      Tags:
+        - Key: Name
+          Value: ehr-aurora-instance
+
+  # Secret Attachment
+  SecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabasePassword
+      TargetId: !Ref AuroraCluster
+      TargetType: AWS::RDS::DBCluster
+
+  # CloudWatch Alarm - CPU
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ehr-aurora-high-cpu
+      AlarmDescription: Alert when Aurora CPU exceeds 80%
+      MetricName: CPUUtilization
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DBClusterIdentifier
+          Value: !Ref AuroraCluster
+
+  # CloudWatch Alarm - Connections
+  HighConnectionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ehr-aurora-high-connections
+      AlarmDescription: Alert when database connections exceed 80% of max
+      MetricName: DatabaseConnections
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DBClusterIdentifier
+          Value: !Ref AuroraCluster
+
+  # CloudWatch Alarm - Capacity
+  ServerlessCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ehr-aurora-high-capacity
+      AlarmDescription: Alert when serverless capacity is at maximum
+      MetricName: ServerlessDatabaseCapacity
+      Namespace: AWS/RDS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !Ref MaxCapacity
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: DBClusterIdentifier
+          Value: !Ref AuroraCluster
+
+Outputs:
+  ClusterEndpoint:
+    Description: Aurora Cluster Endpoint
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterEndpoint'
+
+  ClusterReadEndpoint:
+    Description: Aurora Cluster Read Endpoint
+    Value: !GetAtt AuroraCluster.ReadEndpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadEndpoint'
+
+  ClusterPort:
+    Description: Aurora Cluster Port
+    Value: !GetAtt AuroraCluster.Endpoint.Port
+    Export:
+      Name: !Sub '${AWS::StackName}-Port'
+
+  DatabaseName:
+    Description: Database Name
+    Value: !Ref DatabaseName
+    Export:
+      Name: !Sub '${AWS::StackName}-DatabaseName'
+
+  DatabaseSecretArn:
+    Description: Secrets Manager ARN for database credentials
+    Value: !Ref DatabasePassword
+    Export:
+      Name: !Sub '${AWS::StackName}-SecretArn'
+
+  SecurityGroupId:
+    Description: Aurora Security Group ID
+    Value: !Ref AuroraSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
+
+  JDBCConnectionString:
+    Description: JDBC Connection String
+    Value: !Sub 'jdbc:postgresql://${AuroraCluster.Endpoint.Address}:${AuroraCluster.Endpoint.Port}/${DatabaseName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-JDBCConnectionString'
