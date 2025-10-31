@@ -23,10 +23,10 @@ resource "aws_api_gateway_resource" "proxy" {
 
 # API Gateway Method - ANY for proxy resource
 resource "aws_api_gateway_method" "proxy" {
-  rest_api_id   = aws_api_gateway_rest_api.main.id
-  resource_id   = aws_api_gateway_resource.proxy.id
-  http_method   = "ANY"
-  authorization = "NONE"
+  rest_api_id      = aws_api_gateway_rest_api.main.id
+  resource_id      = aws_api_gateway_resource.proxy.id
+  http_method      = "ANY"
+  authorization    = "NONE"
   api_key_required = var.api_key_required
 
   request_parameters = {
@@ -36,10 +36,10 @@ resource "aws_api_gateway_method" "proxy" {
 
 # API Gateway Method - ANY for root resource
 resource "aws_api_gateway_method" "root" {
-  rest_api_id   = aws_api_gateway_rest_api.main.id
-  resource_id   = aws_api_gateway_rest_api.main.root_resource_id
-  http_method   = "ANY"
-  authorization = "NONE"
+  rest_api_id      = aws_api_gateway_rest_api.main.id
+  resource_id      = aws_api_gateway_rest_api.main.root_resource_id
+  http_method      = "ANY"
+  authorization    = "NONE"
   api_key_required = var.api_key_required
 }
 

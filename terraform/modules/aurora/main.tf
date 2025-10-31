@@ -46,34 +46,34 @@ resource "random_password" "aurora_master_password" {
 
 # Aurora Cluster
 resource "aws_rds_cluster" "aurora" {
-  cluster_identifier      = "${var.project_name}-${var.environment}-aurora-cluster"
-  engine                  = "aurora-postgresql"
-  engine_mode             = "provisioned"
-  engine_version          = var.engine_version
-  database_name           = var.database_name
-  master_username         = var.master_username
-  master_password         = var.master_password != null ? var.master_password : random_password.aurora_master_password[0].result
-  
-  db_subnet_group_name    = aws_db_subnet_group.aurora.name
-  vpc_security_group_ids  = [aws_security_group.aurora.id]
-  
-  backup_retention_period = var.backup_retention_period
-  preferred_backup_window = var.preferred_backup_window
+  cluster_identifier = "${var.project_name}-${var.environment}-aurora-cluster"
+  engine             = "aurora-postgresql"
+  engine_mode        = "provisioned"
+  engine_version     = var.engine_version
+  database_name      = var.database_name
+  master_username    = var.master_username
+  master_password    = var.master_password != null ? var.master_password : random_password.aurora_master_password[0].result
+
+  db_subnet_group_name   = aws_db_subnet_group.aurora.name
+  vpc_security_group_ids = [aws_security_group.aurora.id]
+
+  backup_retention_period      = var.backup_retention_period
+  preferred_backup_window      = var.preferred_backup_window
   preferred_maintenance_window = var.preferred_maintenance_window
-  
-  skip_final_snapshot     = var.skip_final_snapshot
+
+  skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-  
-  storage_encrypted       = true
-  
+
+  storage_encrypted = true
+
   enabled_cloudwatch_logs_exports = ["postgresql"]
-  
+
   serverlessv2_scaling_configuration {
     min_capacity = var.min_capacity
     max_capacity = var.max_capacity
   }
 
-  enable_http_endpoint    = var.enable_http_endpoint
+  enable_http_endpoint = var.enable_http_endpoint
 
   tags = {
     Name = "${var.project_name}-${var.environment}-aurora-cluster"
@@ -92,11 +92,11 @@ resource "aws_rds_cluster_instance" "aurora" {
   instance_class     = "db.serverless"
   engine             = aws_rds_cluster.aurora.engine
   engine_version     = aws_rds_cluster.aurora.engine_version
-  
+
   publicly_accessible = false
-  
+
   performance_insights_enabled = var.enable_performance_insights
-  
+
   tags = {
     Name = "${var.project_name}-${var.environment}-aurora-instance-${count.index + 1}"
   }

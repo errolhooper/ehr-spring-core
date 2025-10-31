@@ -93,9 +93,9 @@ output "lambda_execution_role_name" {
 output "connection_details" {
   description = "Connection details for the deployed application"
   value = {
-    api_endpoint    = module.api_gateway.api_invoke_url
-    database_host   = module.aurora.cluster_endpoint
-    database_port   = 5432
-    database_name   = module.aurora.database_name
+    api_endpoint  = module.api_gateway.api_invoke_url
+    database_host = module.aurora.cluster_endpoint
+    database_port = 5432
+    database_name = module.aurora.database_name
   }
 }

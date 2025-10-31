@@ -100,7 +100,7 @@ variable "lambda_timeout" {
 variable "lambda_reserved_concurrency" {
   description = "Reserved concurrent executions for Lambda"
   type        = number
-  default     = -1  # -1 means unreserved
+  default     = -1 # -1 means unreserved
 }
 
 # Application variables

@@ -23,33 +23,33 @@ resource "aws_security_group" "lambda" {
 resource "aws_lambda_function" "spring_boot_app" {
   function_name = "${var.project_name}-${var.environment}-app"
   role          = var.lambda_execution_role_arn
-  
+
   # For now, using a placeholder. In real deployment, this would point to the JAR file
   # Package the Spring Boot application as a ZIP or use container image
   filename         = var.deployment_package_path
   source_code_hash = var.deployment_package_path != null ? filebase64sha256(var.deployment_package_path) : null
-  
+
   # Alternative: Use container image
   # package_type = "Image"
   # image_uri    = var.image_uri
-  
+
   handler = "org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest"
   runtime = var.runtime
-  
+
   memory_size = var.memory_size
   timeout     = var.timeout
-  
+
   reserved_concurrent_executions = var.reserved_concurrent_executions
-  
+
   vpc_config {
     subnet_ids         = var.private_subnet_ids
     security_group_ids = [aws_security_group.lambda.id]
   }
-  
+
   environment {
     variables = var.environment_variables
   }
-  
+
   tracing_config {
     mode = var.enable_xray ? "Active" : "PassThrough"
   }
@@ -84,11 +84,11 @@ resource "aws_lambda_function_url" "spring_boot_app" {
   authorization_type = "NONE"
 
   cors {
-    allow_origins     = ["*"]
-    allow_methods     = ["*"]
-    allow_headers     = ["*"]
-    expose_headers    = ["*"]
-    max_age           = 3600
+    allow_origins  = ["*"]
+    allow_methods  = ["*"]
+    allow_headers  = ["*"]
+    expose_headers = ["*"]
+    max_age        = 3600
   }
 }
 
