@@ -12,18 +12,22 @@ public class IngestionService {
     private static final Logger logger = LoggerFactory.getLogger(IngestionService.class);
     
     private final PayloadStorageService storageService;
+    private final DatabaseService databaseService;
 
-    public IngestionService(PayloadStorageService storageService) {
+    public IngestionService(PayloadStorageService storageService, DatabaseService databaseService) {
         this.storageService = storageService;
+        this.databaseService = databaseService;
     }
 
     public void ingestEvent(EventRequest event) {
         logger.info("Ingesting event: {}", event.getEventName());
         storageService.storePayload("EVENT", event);
+        databaseService.saveEvent(event);
     }
 
     public void ingestMetric(MetricRequest metric) {
         logger.info("Ingesting metric: {}", metric.getMetricName());
         storageService.storePayload("METRIC", metric);
+        databaseService.saveMetric(metric);
     }
 }
