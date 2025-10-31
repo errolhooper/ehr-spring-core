@@ -120,19 +120,20 @@ jobs:
           aws lambda wait function-updated \
             --function-name ${{ secrets.LAMBDA_FUNCTION_NAME || 'ehr-spring-core' }}
 
-          # Update environment variables
+          # Update environment variables (non-sensitive only)
+          # Note: DB_PASSWORD and API_KEY should be configured in Lambda environment
+          # or retrieved from AWS Secrets Manager using Lambda extension
           aws lambda update-function-configuration \
             --function-name ${{ secrets.LAMBDA_FUNCTION_NAME || 'ehr-spring-core' }} \
             --environment Variables="{
               DB_URL=${{ secrets.DB_URL }},
               DB_USERNAME=${{ secrets.DB_USERNAME }},
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }},
-              API_KEY=${{ secrets.API_KEY }},
               DB_DDL_AUTO=validate,
               DB_SHOW_SQL=false
             }"
 
           echo "Lambda deployment completed successfully"
+          echo "Note: Ensure DB_PASSWORD and API_KEY are configured in Lambda environment or Secrets Manager"
 
   deploy-ecs:
     name: Deploy to AWS ECS
@@ -170,17 +171,7 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY || 'ehr-spring-core' }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Create Dockerfile if it doesn't exist
-          if [ ! -f Dockerfile ]; then
-            cat > Dockerfile <<'EOF'
-          FROM eclipse-temurin:17-jre-alpine
-          WORKDIR /app
-          COPY target/ehr-spring-core-*.jar app.jar
-          EXPOSE 8080
-          ENTRYPOINT ["java", "-jar", "app.jar"]
-          EOF
-          fi
-
+          # Build Docker image using existing Dockerfile
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -329,13 +320,20 @@ jobs:
 
           echo "Testing connection to database: $DB_HOST:$DB_PORT/$DB_NAME"
 
-          # Test connection
-          PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+          # Create .pgpass file for secure authentication
+          echo "$DB_HOST:${DB_PORT:-5432}:$DB_NAME:${{ secrets.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}" > ~/.pgpass
+          chmod 600 ~/.pgpass
+
+          # Test connection using .pgpass for authentication
+          psql \
             -h "$DB_HOST" \
             -p "${DB_PORT:-5432}" \
             -U "${{ secrets.DB_USERNAME }}" \
             -d "$DB_NAME" \
             -c "SELECT version();" || echo "Database connection test completed"
+
+          # Clean up .pgpass file
+          rm -f ~/.pgpass
 
       - name: Run database migration
         run: |

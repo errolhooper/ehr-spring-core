@@ -48,7 +48,7 @@ Resources:
         SecretStringTemplate: !Sub '{"username": "${MasterUsername}"}'
         GenerateStringKey: password
         PasswordLength: 32
-        ExcludeCharacters: '"@/\'
+        ExcludeCharacters: '"@/\\'
         RequireEachIncludedType: true
 
   # DB Subnet Group

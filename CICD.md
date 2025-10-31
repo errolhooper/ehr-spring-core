@@ -58,18 +58,31 @@ Deployment jobs run only on pushes to the `main` branch or when manually trigger
 - `LAMBDA_FUNCTION_NAME` (optional, defaults to ehr-spring-core)
 - `DB_URL` - PostgreSQL/Aurora connection string
 - `DB_USERNAME` - Database username
-- `DB_PASSWORD` - Database password
-- `API_KEY` - Application API key
+
+**Important Security Note:**
+Sensitive secrets like `DB_PASSWORD` and `API_KEY` should be configured directly in the Lambda function environment or retrieved from AWS Secrets Manager using Lambda extensions, not passed through GitHub Actions. The workflow only updates non-sensitive configuration.
 
 **Configuration:**
 ```bash
-# Example environment variables for Lambda
+# Lambda environment variables (set via AWS Console or CLI)
 DB_URL=jdbc:postgresql://your-aurora-endpoint.region.rds.amazonaws.com:5432/ehrdb
 DB_USERNAME=postgres
-DB_PASSWORD=your-secure-password
-API_KEY=your-secure-api-key
+DB_PASSWORD=<stored-in-lambda-environment-or-secrets-manager>
+API_KEY=<stored-in-lambda-environment-or-secrets-manager>
 DB_DDL_AUTO=validate
 DB_SHOW_SQL=false
+```
+
+**Recommended: Using AWS Secrets Manager with Lambda**
+```bash
+# Create secrets in Secrets Manager
+aws secretsmanager create-secret --name ehr-db-password --secret-string "your-password"
+aws secretsmanager create-secret --name ehr-api-key --secret-string "your-api-key"
+
+# Configure Lambda to use Secrets Manager Extension
+# Add environment variables to Lambda:
+# DB_PASSWORD_SECRET=ehr-db-password
+# API_KEY_SECRET=ehr-api-key
 ```
 
 #### Deploy to AWS ECS
