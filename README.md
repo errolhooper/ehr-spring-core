@@ -11,6 +11,7 @@ Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform
 - **Health Monitoring**: Spring Boot Actuator health checks
 - **API Documentation**: Interactive Swagger UI for API exploration
 - **In-Memory Logging**: Configurable payload storage for debugging
+- **CI/CD Pipeline**: Automated deployment to AWS Lambda, ECS, or Elastic Beanstalk
 
 ## Quick Start
 
@@ -214,6 +215,36 @@ src/
 - Actuator and Swagger endpoints are public
 - Default API key should never be used in production
 - Application logs a warning when using the default API key
+
+## CI/CD and Deployment
+
+This repository includes a comprehensive GitHub Actions CI/CD pipeline for automated deployment to AWS.
+
+### Deployment Options
+
+- **AWS Lambda**: Serverless deployment
+- **AWS ECS (Fargate)**: Container-based deployment with auto-scaling
+- **AWS Elastic Beanstalk**: Managed platform deployment
+
+### Documentation
+
+- **[Quick Start Guide](QUICKSTART.md)**: Quick commands and setup
+- **[Complete CI/CD Documentation](CICD.md)**: Detailed pipeline documentation
+- **[AWS Infrastructure Templates](aws-infrastructure/README.md)**: CloudFormation templates
+- **[Aurora Database Setup](AURORA_SETUP.md)**: Database configuration guide
+
+### Getting Started with CI/CD
+
+1. Configure GitHub Secrets (see [QUICKSTART.md](QUICKSTART.md))
+2. Deploy AWS infrastructure using CloudFormation templates
+3. Push code to `main` branch to trigger automatic deployment
+4. Monitor deployment in GitHub Actions
+
+For manual deployment:
+```bash
+# Go to Actions tab → CI/CD Pipeline → Run workflow
+# Select deployment target: lambda, ecs, or elastic-beanstalk
+```
 
 ## License
 
