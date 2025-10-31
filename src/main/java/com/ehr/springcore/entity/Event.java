@@ -20,6 +20,12 @@ public class Event {
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
 
+    /**
+     * Event properties stored as key-value pairs.
+     * Property values are stored in PostgreSQL TEXT columns which have no explicit size limit
+     * (up to 1GB in practice). For very large property values, consider storing references
+     * to external storage instead.
+     */
     @ElementCollection
     @CollectionTable(name = "event_properties", joinColumns = @JoinColumn(name = "event_id"))
     @MapKeyColumn(name = "property_key")

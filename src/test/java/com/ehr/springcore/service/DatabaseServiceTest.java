@@ -155,4 +155,34 @@ class DatabaseServiceTest {
         assertEquals("test.metric", metrics.get(0).getMetricName());
         assertEquals(50.0, metrics.get(0).getValue());
     }
+
+    @Test
+    void testSaveEvent_WithComplexPropertyValues() {
+        // Arrange
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("simpleString", "value");
+        properties.put("number", 123);
+        properties.put("boolean", true);
+        properties.put("complexObject", Map.of("nested", "data", "count", 5));
+        
+        EventRequest eventRequest = new EventRequest(
+            "complex.event",
+            Instant.now(),
+            properties
+        );
+
+        // Act
+        Event savedEvent = databaseService.saveEvent(eventRequest);
+
+        // Assert
+        assertNotNull(savedEvent);
+        assertNotNull(savedEvent.getId());
+        assertEquals("complex.event", savedEvent.getEventName());
+        assertEquals("value", savedEvent.getProperties().get("simpleString"));
+        assertEquals("123", savedEvent.getProperties().get("number"));
+        assertEquals("true", savedEvent.getProperties().get("boolean"));
+        // Complex object should be serialized as JSON
+        assertTrue(savedEvent.getProperties().get("complexObject").contains("nested"));
+        assertTrue(savedEvent.getProperties().get("complexObject").contains("data"));
+    }
 }
