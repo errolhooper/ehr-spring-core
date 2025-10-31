@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build artifacts
+target/*.original
+target/classes
+target/test-classes
+target/maven-status
+target/maven-archiver
+target/surefire-reports
+
+# Documentation
+*.md
+issues/
+
+# CI/CD
+.github
+
+# Maven wrapper
+.mvn
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
