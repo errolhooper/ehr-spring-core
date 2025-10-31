@@ -5,6 +5,7 @@ Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform
 ## Features
 
 - **Analytics Ingestion**: REST endpoints for ingesting events and metrics
+- **PostgreSQL Persistence**: Store events and metrics in PostgreSQL/Amazon Aurora
 - **API Security**: X-API-Key authentication for all API endpoints
 - **Validation**: Request validation using Jakarta Bean Validation
 - **Health Monitoring**: Spring Boot Actuator health checks
@@ -42,6 +43,28 @@ The application will start on `http://localhost:8080`
 
 Configure the application via environment variables or `src/main/resources/application.yml`:
 
+#### Database Configuration
+
+For production with Amazon Aurora PostgreSQL:
+
+```bash
+export DB_URL="jdbc:postgresql://your-aurora-endpoint.region.rds.amazonaws.com:5432/ehrdb"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="your_secure_password"
+```
+
+For local development with PostgreSQL:
+
+```bash
+export DB_URL="jdbc:postgresql://localhost:5432/ehrdb"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="postgres"
+```
+
+See [AURORA_SETUP.md](AURORA_SETUP.md) for detailed Amazon Aurora PostgreSQL setup instructions.
+
+#### API Security Configuration
+
 ```yaml
 # API Key (set via environment variable for production)
 security:
@@ -52,6 +75,13 @@ logging:
   payloads:
     enabled: true
     max-size: 1000
+
+# Database configuration
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ehrdb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
 ```
 
 **Important**: Always set the `API_KEY` environment variable in production:
