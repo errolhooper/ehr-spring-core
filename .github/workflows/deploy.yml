@@ -129,12 +129,7 @@ jobs:
           # or retrieved from AWS Secrets Manager using Lambda extension
           aws lambda update-function-configuration \
             --function-name ${{ secrets.LAMBDA_FUNCTION_NAME || 'ehr-spring-core' }} \
-            --environment Variables="{
-              DB_URL=${{ secrets.DB_URL }},
-              DB_USERNAME=${{ secrets.DB_USERNAME }},
-              DB_DDL_AUTO=validate,
-              DB_SHOW_SQL=false
-            }"
+            --environment Variables='{"DB_URL":"${{ secrets.DB_URL }}","DB_USERNAME":"${{ secrets.DB_USERNAME }}","DB_DDL_AUTO":"validate","DB_SHOW_SQL":"false"}'
 
           echo "Lambda deployment completed successfully"
           echo "Note: Ensure DB_PASSWORD and API_KEY are configured in Lambda environment or Secrets Manager"
@@ -244,15 +239,14 @@ jobs:
               JAVA_TOOL_OPTIONS: "-Xmx512m"
           EOF
 
-          # Create deployment package
-          zip -r deployment-package.zip $JAR_FILE .ebextensions Procfile 2>/dev/null || zip -r deployment-package.zip $JAR_FILE .ebextensions
-
           # Create Procfile if it doesn't exist
           if [ ! -f Procfile ]; then
             JAR_NAME=$(basename $JAR_FILE)
             echo "web: java -jar $JAR_NAME" > Procfile
-            zip deployment-package.zip Procfile
           fi
+
+          # Create deployment package
+          zip -r deployment-package.zip $JAR_FILE .ebextensions Procfile
 
       - name: Deploy to Elastic Beanstalk
         env:
@@ -261,7 +255,7 @@ jobs:
         run: |
           # Upload to S3
           VERSION_LABEL="v-${{ github.sha }}-$(date +%s)"
-          S3_BUCKET="${{ secrets.EB_BUCKET || 'elasticbeanstalk-'$AWS_REGION }}"
+          S3_BUCKET="${{ secrets.EB_BUCKET || format('elasticbeanstalk-{0}', env.AWS_REGION) }}"
 
           aws s3 cp deployment-package.zip s3://$S3_BUCKET/$EB_APPLICATION/$VERSION_LABEL.zip
 
@@ -334,7 +328,13 @@ jobs:
             -p "${DB_PORT:-5432}" \
             -U "${{ secrets.DB_USERNAME }}" \
             -d "$DB_NAME" \
-            -c "SELECT version();" || echo "Database connection test completed"
+            -c "SELECT version();"
+          if [ $? -ne 0 ]; then
+            echo "Database connection test failed"
+            exit 1
+          else
+            echo "Database connection test succeeded"
+          fi
 
           # Clean up .pgpass file
           rm -f ~/.pgpass

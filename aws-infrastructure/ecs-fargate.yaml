@@ -8,7 +8,7 @@ Parameters:
 
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: List of subnet IDs for ECS tasks (at least 2 for high availability)
+    Description: List of subnet IDs for ECS tasks (must be private subnets with NAT Gateway for internet access since tasks have AssignPublicIp disabled)
 
   DatabaseEndpoint:
     Type: String
