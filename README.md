@@ -215,6 +215,36 @@ src/
 - Default API key should never be used in production
 - Application logs a warning when using the default API key
 
+## Infrastructure as Code
+
+This project includes comprehensive Terraform configurations for deploying to AWS. The infrastructure includes:
+
+- **VPC and Networking**: Multi-AZ setup with public, private, and database subnets
+- **Aurora PostgreSQL**: Serverless v2 database cluster with automated backups
+- **Lambda Functions**: Serverless compute for the Spring Boot application
+- **API Gateway**: REST API endpoint with throttling and monitoring
+- **IAM Roles**: Secure access control with least-privilege policies
+
+### Quick Deploy
+
+```bash
+# Setup Terraform backend (one-time)
+cd terraform
+./scripts/setup-backend.sh dev us-east-1
+
+# Configure secrets
+cd environments/dev
+cp secrets.tfvars.example secrets.tfvars
+# Edit secrets.tfvars with your values
+
+# Deploy infrastructure
+cd ../..
+./scripts/deploy.sh dev plan
+./scripts/deploy.sh dev apply
+```
+
+For comprehensive infrastructure documentation, see [TERRAFORM.md](TERRAFORM.md).
+
 ## License
 
 This is part of the EHR (Engineering & Innovation Hub) platform.
