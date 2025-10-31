@@ -5,33 +5,33 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID where Aurora will be deployed
-  
+
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of subnet IDs for Aurora (at least 2 in different AZs)
-  
+
   DatabaseName:
     Type: String
     Default: ehrdb
     Description: Database name
-  
+
   MasterUsername:
     Type: String
     Default: postgres
     Description: Master username for Aurora
-  
+
   MinCapacity:
     Type: Number
     Default: 0.5
     Description: Minimum Aurora Capacity Units (ACUs)
     AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
-  
+
   MaxCapacity:
     Type: Number
     Default: 2
     Description: Maximum Aurora Capacity Units (ACUs)
     AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 16, 32, 64]
-  
+
   AllowedCIDR:
     Type: String
     Default: 10.0.0.0/16

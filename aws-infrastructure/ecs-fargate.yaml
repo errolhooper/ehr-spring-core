@@ -5,29 +5,29 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID where resources will be deployed
-  
+
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of subnet IDs for ECS tasks (at least 2 for high availability)
-  
+
   DatabaseEndpoint:
     Type: String
     Description: Aurora PostgreSQL endpoint
-  
+
   DatabaseName:
     Type: String
     Default: ehrdb
     Description: Database name
-  
+
   DatabaseUsername:
     Type: String
     Default: postgres
     Description: Database username
-  
+
   DatabasePasswordSecretArn:
     Type: String
     Description: ARN of Secrets Manager secret containing database password
-  
+
   ApiKeySecretArn:
     Type: String
     Description: ARN of Secrets Manager secret containing API key
