@@ -2,22 +2,21 @@ spring:
   application:
     name: ehr-spring-core
   
-  # Database configuration
+  # Use H2 in-memory database for tests
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/ehrdb}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
   
-  # JPA configuration
   jpa:
     hibernate:
-      ddl-auto: ${DB_DDL_AUTO:update}
+      ddl-auto: create-drop
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
-    show-sql: ${DB_SHOW_SQL:false}
+    show-sql: false
 
 server:
   port: 8080
