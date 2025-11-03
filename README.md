@@ -11,6 +11,7 @@ Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform
 - **Health Monitoring**: Spring Boot Actuator health checks
 - **API Documentation**: Interactive Swagger UI for API exploration
 - **In-Memory Logging**: Configurable payload storage for debugging
+- **CI/CD Pipeline**: Automated deployment to AWS Lambda, ECS, or Elastic Beanstalk
 
 ## Quick Start
 
