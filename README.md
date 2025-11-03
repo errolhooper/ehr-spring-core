@@ -216,35 +216,35 @@ src/
 - Default API key should never be used in production
 - Application logs a warning when using the default API key
 
-## CI/CD and Deployment
+## Infrastructure as Code
 
-This repository includes a comprehensive GitHub Actions CI/CD pipeline for automated deployment to AWS.
+This project includes comprehensive Terraform configurations for deploying to AWS. The infrastructure includes:
 
-### Deployment Options
+- **VPC and Networking**: Multi-AZ setup with public, private, and database subnets
+- **Aurora PostgreSQL**: Serverless v2 database cluster with automated backups
+- **Lambda Functions**: Serverless compute for the Spring Boot application
+- **API Gateway**: REST API endpoint with throttling and monitoring
+- **IAM Roles**: Secure access control with least-privilege policies
 
-- **AWS Lambda**: Serverless deployment
-- **AWS ECS (Fargate)**: Container-based deployment with auto-scaling
-- **AWS Elastic Beanstalk**: Managed platform deployment
+### Quick Deploy
 
-### Documentation
-
-- **[Quick Start Guide](QUICKSTART.md)**: Quick commands and setup
-- **[Complete CI/CD Documentation](CICD.md)**: Detailed pipeline documentation
-- **[AWS Infrastructure Templates](aws-infrastructure/README.md)**: CloudFormation templates
-- **[Aurora Database Setup](AURORA_SETUP.md)**: Database configuration guide
-
-### Getting Started with CI/CD
-
-1. Configure GitHub Secrets (see [QUICKSTART.md](QUICKSTART.md))
-2. Deploy AWS infrastructure using CloudFormation templates
-3. Push code to `main` branch to trigger automatic deployment
-4. Monitor deployment in GitHub Actions
-
-For manual deployment:
 ```bash
-# Go to Actions tab → CI/CD Pipeline → Run workflow
-# Select deployment target: lambda, ecs, or elastic-beanstalk
+# Setup Terraform backend (one-time)
+cd terraform
+./scripts/setup-backend.sh dev us-east-1
+
+# Configure secrets
+cd environments/dev
+cp secrets.tfvars.example secrets.tfvars
+# Edit secrets.tfvars with your values
+
+# Deploy infrastructure
+cd ../..
+./scripts/deploy.sh dev plan
+./scripts/deploy.sh dev apply
 ```
+
+For comprehensive infrastructure documentation, see [TERRAFORM.md](TERRAFORM.md).
 
 ## License
 
