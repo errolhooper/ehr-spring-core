@@ -43,13 +43,18 @@ def read_website_cookies(url):
         # Extract cookies from the response
         cookies = []
         for cookie in response.cookies:
+            # Detect HttpOnly flag properly
+            http_only = False
+            if hasattr(cookie, '_rest'):
+                http_only = cookie._rest.get('HttpOnly', False) if cookie._rest else False
+            
             cookie_data = {
                 "name": cookie.name,
                 "value": cookie.value,
                 "domain": cookie.domain,
                 "path": cookie.path,
                 "secure": cookie.secure,
-                "httpOnly": hasattr(cookie, 'has_nonstandard_attr') and cookie.has_nonstandard_attr('HttpOnly'),
+                "httpOnly": http_only,
                 "expires": None  # Cookie expiration not always available
             }
             cookies.append(cookie_data)

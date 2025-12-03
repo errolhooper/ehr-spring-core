@@ -1,5 +1,6 @@
 package com.ehr.springcore.service;
 
+import com.ehr.springcore.config.CookieScannerProperties;
 import com.ehr.springcore.entity.CookieScan;
 import com.ehr.springcore.model.CookieRequest;
 import com.ehr.springcore.model.CookieScanResponse;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
@@ -19,37 +21,47 @@ import java.util.concurrent.TimeUnit;
 public class CookieScanService {
 
     private static final Logger logger = LoggerFactory.getLogger(CookieScanService.class);
-    private static final int TIMEOUT_SECONDS = 30;
 
     private final CookieScanRepository cookieScanRepository;
     private final ObjectMapper objectMapper;
+    private final CookieScannerProperties properties;
 
-    public CookieScanService(CookieScanRepository cookieScanRepository, ObjectMapper objectMapper) {
+    public CookieScanService(CookieScanRepository cookieScanRepository, 
+                           ObjectMapper objectMapper,
+                           CookieScannerProperties properties) {
         this.cookieScanRepository = cookieScanRepository;
         this.objectMapper = objectMapper;
+        this.properties = properties;
     }
 
     public CookieScanResponse scanWebsiteForCookies(CookieRequest request) {
         logger.info("Starting cookie scan for URL: {}", request.getUrl());
 
         try {
+            // Validate URL to prevent command injection
+            String validatedUrl = validateUrl(request.getUrl());
+            if (validatedUrl == null) {
+                logger.error("Invalid URL format: {}", request.getUrl());
+                return createErrorResponse(request.getUrl(), "Invalid URL format");
+            }
+
             // Find the Python script path
             String scriptPath = findPythonScript();
             if (scriptPath == null) {
-                logger.error("Python script not found");
+                logger.error("Python script not found at: {}", properties.getPythonScriptPath());
                 return createErrorResponse(request.getUrl(), "Cookie reader script not found");
             }
 
-            // Execute the Python script
+            // Execute the Python script with validated URL
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "python3",
                     scriptPath,
-                    request.getUrl()
+                    validatedUrl
             );
             processBuilder.redirectErrorStream(true);
 
             Process process = processBuilder.start();
-            boolean completed = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean completed = process.waitFor(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
 
             if (!completed) {
                 process.destroyForcibly();
@@ -94,23 +106,46 @@ public class CookieScanService {
         }
     }
 
-    private String findPythonScript() {
-        // Try multiple potential locations
-        String[] possiblePaths = {
-                "src/main/python/cookie_reader.py",
-                "./src/main/python/cookie_reader.py",
-                "../src/main/python/cookie_reader.py"
-        };
-
-        for (String path : possiblePaths) {
-            File file = new File(path);
-            if (file.exists()) {
-                logger.debug("Found Python script at: {}", file.getAbsolutePath());
-                return file.getAbsolutePath();
+    private String validateUrl(String url) {
+        try {
+            // Parse and validate the URL
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            
+            // Only allow http and https schemes
+            if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
+                return null;
             }
+            
+            // Ensure host is present
+            if (uri.getHost() == null || uri.getHost().isEmpty()) {
+                return null;
+            }
+            
+            // Return the validated URL
+            return uri.toString();
+        } catch (Exception e) {
+            logger.error("URL validation failed for: {}", url, e);
+            return null;
+        }
+    }
+
+    private String findPythonScript() {
+        // Use configured path
+        File file = new File(properties.getPythonScriptPath());
+        if (file.exists() && file.canRead()) {
+            logger.debug("Found Python script at: {}", file.getAbsolutePath());
+            return file.getAbsolutePath();
         }
 
-        logger.error("Python script not found in any of the expected locations");
+        // Try relative to current directory as fallback
+        File fallbackFile = new File("./" + properties.getPythonScriptPath());
+        if (fallbackFile.exists() && fallbackFile.canRead()) {
+            logger.debug("Found Python script at fallback location: {}", fallbackFile.getAbsolutePath());
+            return fallbackFile.getAbsolutePath();
+        }
+
+        logger.error("Python script not found at configured path: {}", properties.getPythonScriptPath());
         return null;
     }
 
