@@ -32,6 +32,11 @@ logging:
     enabled: true
     max-size: 1000
 
+# Cookie scanner configuration
+cookie-scanner:
+  python-script-path: ${COOKIE_SCANNER_SCRIPT_PATH:src/main/python/cookie_reader.py}
+  timeout-seconds: 30
+
 # Actuator configuration
 management:
   endpoints:
