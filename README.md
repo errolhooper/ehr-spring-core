@@ -5,7 +5,8 @@ Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform
 ## Features
 
 - **Analytics Ingestion**: REST endpoints for ingesting events and metrics
-- **PostgreSQL Persistence**: Store events and metrics in PostgreSQL/Amazon Aurora
+- **Cookie Scanner**: Python-powered website cookie reader for analyzing news websites
+- **PostgreSQL Persistence**: Store events, metrics, and cookie scan results in PostgreSQL/Amazon Aurora
 - **API Security**: X-API-Key authentication for all API endpoints
 - **Validation**: Request validation using Jakarta Bean Validation
 - **Health Monitoring**: Spring Boot Actuator health checks
@@ -19,6 +20,7 @@ Core Spring Boot application for the EHR (Engineering & Innovation Hub) platform
 
 - Java 17 or higher
 - Maven 3.6+
+- Python 3.8+ (for cookie scanner feature)
 
 ### Building the Application
 
@@ -39,6 +41,23 @@ mvn spring-boot:run
 ```
 
 The application will start on `http://localhost:8080`
+
+### Python Dependencies (for Cookie Scanner)
+
+Install Python dependencies for the cookie scanner feature:
+
+```bash
+cd src/main/python
+pip3 install -r requirements.txt
+```
+
+Or install globally:
+
+```bash
+pip3 install requests==2.31.0
+```
+
+The Python script is located at `src/main/python/cookie_reader.py` and is automatically executed by the Java service when using the cookie scanner API endpoint.
 
 ### Configuration
 
@@ -126,6 +145,18 @@ X-API-Key: your-api-key
 }
 ```
 
+### Scan Website for Cookies
+
+```bash
+POST /api/v1/cookies/scan
+Content-Type: application/json
+X-API-Key: your-api-key
+
+{
+  "url": "https://www.example.com"
+}
+```
+
 ### Health Check
 
 ```bash
@@ -176,6 +207,14 @@ curl -X POST http://localhost:8080/api/v1/ingest/metrics \
     "value": 75.5,
     "timestamp": "2025-10-30T19:52:00Z",
     "unit": "percent"
+  }'
+
+# Scan a website for cookies (e.g., news website)
+curl -X POST http://localhost:8080/api/v1/cookies/scan \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY" \
+  -d '{
+    "url": "https://www.bbc.com/news"
   }'
 
 # Check health
